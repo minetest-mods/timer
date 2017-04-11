@@ -48,27 +48,40 @@ local function register(self)
 	timers[self.registration] = true
 end
 
-function Timer.new(fn, param1, param2)
+function Timer.new(fn, data)
 	local self = setmetatable({}, Timer)
 
 	assert(type(fn) == "function")
 	self.fn = fn
 
-	if type(param1) == "table" then
-		self.interval = param1.interval
-		self.repeats = param1.repeats
-		self.active = param1.active
-		if self.active then
-			self.elapsed = param1.elapsed or 0.0
+	if data.storage and data.key then
+		self.storage = data.storage
+		self.key = data.key
+		local stored_data = data.storage:get_string(data.key)
+		if stored_data == "" then
+			-- initialize from default values
+			self.interval = data.interval
+			self.repeats = data.repeats == nil or data.repeats == true
+			self.elapsed = 0.0
+		else
+			local meta = minetest.parse_json(stored_data)
+			-- initialize from saved state
+			self.interval = meta.interval
+			self.repeats = meta.repeats == nil or meta.repeats == true
+			self.active = meta.active
+			if self.active then
+				self.elapsed = meta.elapsed or 0.0
+			else
+				self.elapsed = 0.0
+			end
 		end
-
-	elseif type(param1) == "number" then
-		self.interval = param1
-		self.repeats = param2 or true
+	elseif data.interval then
+		-- initialize from default state since no storageref present
+		self.interval = data.interval
+		self.repeats = data.repeats == nil or data.repeats
 
 		self.active = false
 		self.elapsed = 0.0
-
 	else
 		minetest.log("error", "Unable to create Timer: Invalid parameters")
 		return nil
@@ -97,7 +110,18 @@ function Timer:stop()
 end
 
 function Timer:set_interval(interval)
+	assert(type(interval) == "number")
+	assert(interval > 0.0)
 	self.interval = interval
+end
+
+function Timer:set_repeats(repeats)
+	assert(type(repeats) == "boolean")
+	self.repeats = repeats
+end
+
+function Timer:get_repeats()
+	return self.repeats
 end
 
 function Timer:get_interval()
@@ -133,6 +157,10 @@ function Timer:to_table()
 		active = self.active,
 		elapsed = self.elapsed,
 	}
+end
+
+function Timer:save()
+	self.storage:set_string(self.key, minetest.write_json(self:to_table()))
 end
 
 ---
