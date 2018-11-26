@@ -136,7 +136,7 @@ function Timer:is_active()
 	return self.active == true
 end
 
-function Timer:expire(elapsed)
+function Timer:expire()
 	self.fn(self.elapsed)
 	if self.elapsed and self.elapsed > 0.0 then
 		-- we could set it here to 0.0, but it's nice

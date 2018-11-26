@@ -96,7 +96,7 @@ your worlds config.
 `is_active()`
  * Returns whether the timer is currently running.
 
-`expire(elapsed)`
+`expire()`
  * Expires the timer manually and executes the function associated with
    it. The elapsed time will be reset to 0.
 
